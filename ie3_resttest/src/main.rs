@@ -1,5 +1,5 @@
 use std::sync::Mutex;
-use utoipa::{OpenApi, ToSchema};
+use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use actix_web::{get, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
@@ -9,13 +9,12 @@ use book_controller::{book, Books};
 const HOST: &str = "localhost";
 const PORT: u16 = 8080;
 
-/// Starting point for the application.
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "info");
-    std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
 
+    // create shared state for a book collection
     let books = web::Data::new(Mutex::new(Books::new()));
 
     // add sample book
@@ -26,11 +25,24 @@ async fn main() -> std::io::Result<()> {
         "544".to_string(),
     ));
 
-
-
     #[derive(OpenApi)]
     //#[openapi(components(schemas(book::Book)), paths(book_controller::*))]
-    #[openapi(paths(book_controller::get_books, book_controller::get_book_by_id), components(schemas(book::Book)))]
+    #[openapi(
+        info(
+            description = "Api for a book colelction",
+            version = "1.0.0",
+            title = "Book API",
+            license (name = "MIT", url = "https://opensource.org/licenses/MIT"),
+            contact (name = "John Doe", email = "jondoe@jejeje.deeee", url = "https://www.jejeje.deeee")
+        ),
+        paths(
+            book_controller::get_books,
+            book_controller::get_book_by_id,
+            book_controller::remove_book,
+            book_controller::add_book,
+        ),
+        components(schemas(book::Book))
+    )]
     struct ApiDoc;
 
     HttpServer::new(move || {
@@ -53,5 +65,5 @@ async fn main() -> std::io::Result<()> {
 #[get("/")]
 async fn index() -> impl Responder {
     println!("index");
-    HttpResponse::BadRequest().body("Bad Request")
+    HttpResponse::Ok().body("Hello world!")
 }
