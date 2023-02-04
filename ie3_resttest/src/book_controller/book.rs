@@ -6,11 +6,11 @@ pub struct Book {
     id: String,
     title: String,
     year: u16,
-    number_pages: String,
+    number_pages: u32,
 }
 
 impl Book {
-    pub fn new(id: String, title: String, year: u16, number_pages: String) -> Book {
+    pub fn new(id: String, title: String, year: u16, number_pages: u32) -> Book {
         Book {
             id,
             title,
@@ -28,7 +28,7 @@ impl Book {
     pub fn year(&self) -> &u16 {
         &self.year
     }
-    pub fn number_pages(&self) -> &String {
+    pub fn number_pages(&self) -> &u32 {
         &self.number_pages
     }
     pub fn id_mut(&mut self) -> &mut String {
@@ -40,7 +40,7 @@ impl Book {
     pub fn year_mut(&mut self) -> &mut u16 {
         &mut self.year
     }
-    pub fn number_pages_mut(&mut self) -> &mut String {
+    pub fn number_pages_mut(&mut self) -> &mut u32 {
         &mut self.number_pages
     }
 }

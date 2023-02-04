@@ -4,7 +4,7 @@ use std::{
     collections::HashMap,
     sync::{Mutex, RwLock},
 };
-use utoipa::{OpenApi, ToSchema};
+use utoipa::ToSchema;
 
 use self::book::Book;
 pub mod book;
@@ -30,9 +30,9 @@ impl Books {
         map.get(&id).cloned()
     }
 
-    fn remove(&mut self, id: &str) {
+    fn remove(&mut self, id: &str) -> Option<Book> {
         let mut map = self.books.write().unwrap();
-        map.remove(id);
+        map.remove(id)
     }
 }
 
@@ -99,6 +99,7 @@ async fn add_book(books: web::Data<Mutex<Books>>, book: web::Json<Book>) -> impl
 #[utoipa::path(
     responses(
     (status = 200, description = "Removes a book", body = String),
+    (status = 404, description = "Book not found"),
 ),
     params(
         ("id", description = "The id of the book to remove",)
@@ -113,6 +114,8 @@ async fn remove_book(books: web::Data<Mutex<Books>>, id: web::Path<String>) -> i
                 .body(format!("Error accessing books data: {}", poisoned))
         }
     };
-    books.remove(&id);
-    HttpResponse::Ok().body("Book removed")
+    match books.remove(&id) {
+        Some(book) => HttpResponse::Ok().body(format!("Removed book {}", book.title())),
+        None => HttpResponse::NotFound().body("Book not found"),
+    }
 }
