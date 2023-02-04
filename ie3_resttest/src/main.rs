@@ -22,7 +22,14 @@ async fn main() -> std::io::Result<()> {
         "9781098122539".to_string(),
         "The Rust Programming Language".to_string(),
         2018,
-        "544".to_string(),
+        544,
+    ));
+    // one more
+    books.lock().unwrap().add(book::Book::new(
+        "67834187613".to_string(),
+        "Some Other Book".to_string(),
+        2019,
+        544,
     ));
 
     #[derive(OpenApi)]
