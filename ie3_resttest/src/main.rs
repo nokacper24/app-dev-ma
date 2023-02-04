@@ -39,14 +39,19 @@ async fn main() -> std::io::Result<()> {
             description = "Api for a book colelction",
             version = "1.0.0",
             title = "Book API",
-            license (name = "MIT", url = "https://opensource.org/licenses/MIT"),
-            contact (name = "John Doe", email = "jondoe@jejeje.deeee", url = "https://www.jejeje.deeee")
+            license(name = "MIT", url = "https://opensource.org/licenses/MIT"),
+            contact(
+                name = "John Doe",
+                email = "jondoe@jejeje.deeee",
+                url = "https://www.jejeje.deeee"
+            )
         ),
         paths(
             book_controller::get_books,
             book_controller::get_book_by_id,
             book_controller::remove_book,
             book_controller::add_book,
+            book_controller::get_books_count
         ),
         components(schemas(book::Book))
     )]
@@ -71,6 +76,5 @@ async fn main() -> std::io::Result<()> {
 
 #[get("/")]
 async fn index() -> impl Responder {
-    println!("index");
     HttpResponse::Ok().body("Hello world!")
 }

@@ -1,10 +1,12 @@
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
+use log::{info, log};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    fmt::format,
     sync::{Mutex, RwLock},
 };
-use utoipa::ToSchema;
+use utoipa::{openapi::info, ToSchema};
 
 use self::book::Book;
 pub mod book;
@@ -37,6 +39,8 @@ impl Books {
 }
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
+    cfg.service(get_books_count); // has to be above get_book_by_id, otherwise it will look for book with id "count"
+                                  // feels like bad practice.  Maybe there's a better way to do this? Use query strings for search?
     cfg.service(get_books);
     cfg.service(add_book);
     cfg.service(get_book_by_id);
@@ -118,4 +122,30 @@ async fn remove_book(books: web::Data<Mutex<Books>>, id: web::Path<String>) -> i
         Some(book) => HttpResponse::Ok().body(format!("Removed book {}", book.title())),
         None => HttpResponse::NotFound().body("Book not found"),
     }
+}
+
+#[utoipa::path(
+    responses(
+    (status = 200, description = "Returns the number of books", body = String),
+),
+)]
+#[get("/books/count")]
+async fn get_books_count(books: web::Data<Mutex<Books>>) -> impl Responder {
+    let books = match books.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => {
+            info!("Error accessing books data: {}", poisoned);
+            return HttpResponse::InternalServerError()
+                .body(format!("Error accessing books data: {}", poisoned));
+        }
+    };
+    let count = match books.books.read() {
+        Ok(guard) => guard.len(),
+        Err(poisoned) => {
+            info!("Error accessing books data: {}", poisoned);
+            return HttpResponse::InternalServerError()
+                .body(format!("Error accessing books data: {}", poisoned));
+        }
+    };
+    HttpResponse::Ok().body(format!("{}", count))
 }
