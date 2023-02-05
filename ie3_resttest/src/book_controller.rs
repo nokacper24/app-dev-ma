@@ -1,42 +1,8 @@
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use log::{info, log};
-use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    fmt::format,
-    sync::{Mutex, RwLock},
-};
-use utoipa::{openapi::info, ToSchema};
+use std::sync::Mutex;
 
-use self::book::Book;
-pub mod book;
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct Books {
-    books: RwLock<HashMap<String, Book>>,
-}
-impl Books {
-    pub fn new() -> Self {
-        Books {
-            books: RwLock::new(HashMap::new()),
-        }
-    }
-
-    pub fn add(&mut self, book: Book) {
-        let mut map = self.books.write().unwrap();
-        map.insert(book.id().clone(), book);
-    }
-
-    fn get(&self, id: String) -> Option<Book> {
-        let map = self.books.read().unwrap();
-        map.get(&id).cloned()
-    }
-
-    fn remove(&mut self, id: &str) -> Option<Book> {
-        let mut map = self.books.write().unwrap();
-        map.remove(id)
-    }
-}
+pub mod book_collection;
+use book_collection::{Books, book::Book};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(get_books_count); // has to be above get_book_by_id, otherwise it will look for book with id "count"
@@ -54,9 +20,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 )]
 #[get("/books")]
 async fn get_books(books: web::Data<Mutex<Books>>) -> impl Responder {
-    let books = books.lock().unwrap();
-    let json_books: Vec<Book> = books.books.read().unwrap().values().cloned().collect();
-    HttpResponse::Ok().json(json_books)
+    let all_books = match books.lock() {
+        Ok(books) => books.get_all(),
+        Err(poisoned) => {
+            return HttpResponse::InternalServerError()
+                .body(format!("Error accessing books data: {}", poisoned))
+        }
+    };
+    HttpResponse::Ok().json(all_books)
 }
 
 #[utoipa::path(
@@ -71,7 +42,7 @@ async fn get_books(books: web::Data<Mutex<Books>>) -> impl Responder {
 #[get("/books/{id}")]
 async fn get_book_by_id(books: web::Data<Mutex<Books>>, id: web::Path<String>) -> impl Responder {
     match books.lock() {
-        Ok(guard) => match guard.get(id.to_string()) {
+        Ok(books) => match books.get(id.to_string()) {
             Some(book) => HttpResponse::Ok().json(book),
             None => HttpResponse::NotFound().body("Book not found"),
         },
@@ -89,14 +60,14 @@ async fn get_book_by_id(books: web::Data<Mutex<Books>>, id: web::Path<String>) -
 #[post("/books")]
 async fn add_book(books: web::Data<Mutex<Books>>, book: web::Json<Book>) -> impl Responder {
     let book = book.into_inner();
-    let mut guard = match books.lock() {
-        Ok(guard) => guard,
+    let mut books = match books.lock() {
+        Ok(books) => books,
         Err(poisoned) => {
             return HttpResponse::InternalServerError()
                 .body(format!("Error accessing books data: {}", poisoned))
         }
     };
-    guard.add(book.clone());
+    books.add(book.clone());
     HttpResponse::Created().json(book)
 }
 
@@ -112,7 +83,7 @@ async fn add_book(books: web::Data<Mutex<Books>>, book: web::Json<Book>) -> impl
 #[delete("/books/{id}")]
 async fn remove_book(books: web::Data<Mutex<Books>>, id: web::Path<String>) -> impl Responder {
     let mut books = match books.lock() {
-        Ok(guard) => guard,
+        Ok(books) => books,
         Err(poisoned) => {
             return HttpResponse::InternalServerError()
                 .body(format!("Error accessing books data: {}", poisoned))
@@ -131,20 +102,11 @@ async fn remove_book(books: web::Data<Mutex<Books>>, id: web::Path<String>) -> i
 )]
 #[get("/books/count")]
 async fn get_books_count(books: web::Data<Mutex<Books>>) -> impl Responder {
-    let books = match books.lock() {
-        Ok(guard) => guard,
+    let count = match books.lock() {
+        Ok(books) => books.count(),
         Err(poisoned) => {
-            info!("Error accessing books data: {}", poisoned);
             return HttpResponse::InternalServerError()
-                .body(format!("Error accessing books data: {}", poisoned));
-        }
-    };
-    let count = match books.books.read() {
-        Ok(guard) => guard.len(),
-        Err(poisoned) => {
-            info!("Error accessing books data: {}", poisoned);
-            return HttpResponse::InternalServerError()
-                .body(format!("Error accessing books data: {}", poisoned));
+                .body(format!("Error accessing books data: {}", poisoned))
         }
     };
     HttpResponse::Ok().body(format!("{}", count))

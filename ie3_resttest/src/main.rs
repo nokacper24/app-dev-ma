@@ -1,10 +1,9 @@
 use std::sync::Mutex;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-
 use actix_web::{get, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
 mod book_controller;
-use book_controller::{book, Books};
+use book_controller::book_collection::{Books, book::Book};
 
 const HOST: &str = "localhost";
 const PORT: u16 = 8080;
@@ -18,14 +17,14 @@ async fn main() -> std::io::Result<()> {
     let books = web::Data::new(Mutex::new(Books::new()));
 
     // add sample book
-    books.lock().unwrap().add(book::Book::new(
+    books.lock().unwrap().add(Book::new(
         "9781098122539".to_string(),
         "The Rust Programming Language".to_string(),
         2018,
         544,
     ));
     // one more
-    books.lock().unwrap().add(book::Book::new(
+    books.lock().unwrap().add(Book::new(
         "67834187613".to_string(),
         "Some Other Book".to_string(),
         2019,
@@ -53,7 +52,7 @@ async fn main() -> std::io::Result<()> {
             book_controller::add_book,
             book_controller::get_books_count
         ),
-        components(schemas(book::Book))
+        components(schemas(Book))
     )]
     struct ApiDoc;
 

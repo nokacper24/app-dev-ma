@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, ToSchema)]
 pub struct Book {
     id: String,
     title: String,
@@ -9,6 +9,7 @@ pub struct Book {
     number_pages: u32,
 }
 
+#[allow(dead_code)] // no warnings for unused code
 impl Book {
     pub fn new(id: String, title: String, year: u16, number_pages: u32) -> Book {
         Book {
