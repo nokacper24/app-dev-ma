@@ -2,7 +2,7 @@ pub mod book;
 use std::collections::HashMap;
 
 use book::Book;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 /// A collection of books

@@ -2,7 +2,7 @@ use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use std::sync::Mutex;
 
 pub mod book_collection;
-use book_collection::{Books, book::Book};
+use book_collection::{book::Book, Books};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(get_books_count); // has to be above get_book_by_id, otherwise it will look for book with id "count"

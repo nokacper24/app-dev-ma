@@ -1,9 +1,9 @@
+use actix_web::{get, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
 use std::sync::Mutex;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use actix_web::{get, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
 mod book_controller;
-use book_controller::book_collection::{Books, book::Book};
+use book_controller::book_collection::{book::Book, Books};
 
 const HOST: &str = "localhost";
 const PORT: u16 = 8080;
