@@ -3,7 +3,10 @@ use std::sync::Mutex;
 
 use ie3_resttest::{
     self,
-    book_controller::{self, book, Books},
+    book_controller::{
+        self,
+        book_collection::{book::Book, Books},
+    },
 };
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -11,14 +14,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     let books = web::Data::new(Mutex::new(Books::new()));
 
     // add sample book
-    books.lock().unwrap().add(book::Book::new(
+    books.lock().unwrap().add(Book::new(
         "9781098122539".to_string(),
         "The Rust Programming Language".to_string(),
         2018,
         544,
     ));
     // one more
-    books.lock().unwrap().add(book::Book::new(
+    books.lock().unwrap().add(Book::new(
         "67834187613".to_string(),
         "Some Other Book".to_string(),
         2019,
@@ -26,6 +29,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     ));
 
     // add data and routes to service
-    cfg.app_data(books.clone());
+    cfg.app_data(books);
     cfg.configure(book_controller::configure);
 }
